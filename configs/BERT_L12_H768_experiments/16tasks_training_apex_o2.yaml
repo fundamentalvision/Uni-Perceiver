@@ -1,0 +1,11 @@
+_BASE_: "16tasks_training.yaml"
+
+####################################### Optimizer #######################################
+SOLVER:
+  
+  AMP_FP16: False
+  APEX_FP16: True # dangerous
+  APEX_OPT_LEVEL: 'O2'
+  MIN_LOSS_SCLE: 128.0
+  CHECKPOINT_PERIOD: 10000
+

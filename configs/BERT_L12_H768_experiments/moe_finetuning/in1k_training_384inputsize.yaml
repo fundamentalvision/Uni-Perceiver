@@ -1,0 +1,158 @@
+_BASE_: "../base_model_bert_l12_h768.yaml"
+
+SHARED_TARGETS:
+
+  - 
+    NAME: 'ImageNet1k'
+    SHARED_TARGETS_CFG:
+      FILE_PATH: 'open_source_dataset/imagenet_class_name_CLIP_with_endoftext.pkl'
+      DISTRIBUTED: False
+
+
+
+TASKS:
+
+  - 
+    NAME: imagenet
+    DATASETS:
+      TRAIN: 'ImageNetDataset'
+      VAL: 'ImageNetDataset'
+      TASK_TYPE: 'image_classification'
+      DATASET_NAME: 'ImageNet1k'
+      TARGET_SET: ['ImageNet1k']
+      
+    DATALOADER:
+      TRAIN_BATCH_SIZE: 64
+      TEST_BATCH_SIZE: 256
+      NUM_WORKERS: 4 # will be used as numworker for testing loader 
+      FEATS_FOLDER: 'open_source_dataset/imagenet'
+      S3_PATH: 'cluster2:s3://imagenet'
+      ANNO_FOLDER:  'open_source_dataset/imagenet/meta'
+      SAMPLING_WEIGHT: 1.0
+      CLASS_NAME_FILE: 'open_source_dataset/imagenet_class_name.pkl'
+      MIXUP: 0.0
+      CUTMIX: 0.0
+      MIXUP_PROB: 1.0
+      MIXUP_SWITCH_PROB: 0.5
+      MIXUP_MODE: 'batch'
+      MIXUP_LABEL_SMOOTHING: 0.1
+    MODEL:
+      MAX_SEQ_LEN: -1
+      LABELS_NUM: 1000
+      TEMP_NAME: logit_scale_img_cls
+    LOSSES:
+      NAMES: ['LabelSmoothingCrossEntropy', 'Accuracy']
+      LOSS_WEIGHT: 1.0
+      REDUCTION: 'mean'
+      LABELSMOOTHING: 0.1
+    INFERENCE:
+      NAME: 'ImageNetEvaler'
+      ID_KEY: 'image_id'
+      VALUE: 'cls_logits'
+      VAL_ANNFILE: 'open_source_dataset/imagenet/meta/val.txt'
+      TEST_ANNFILE: ''
+      GENERATION_MODE: False
+
+ENGINE:
+  NAME: 'UnifiedTrainer'
+ 
+MODEL:
+  META_ARCHITECTURE: 'MultiTaskTransformerEncoder'
+  ENCODER: 'UnifiedBertEncoder'
+
+  SHARE_LAYERNORM: True
+  BERT:
+    NORMALIZE_DECISION: "BERTPre" 
+    DROP_PATH_PROB: 0.1
+    DROP_PATH_PROB_FIXED: True
+
+
+  MODEL_EMA: False
+  MODEL_EMA_DECAY: 0.9999
+
+  MAEParamsInit: True
+  POSEMBEDFIX: True
+
+
+  IMG_INPUT_SIZE: 384
+  PATCH_SIZE: 16
+  POSEMBED_SCALE: !!python/object/apply:eval ["160/384"]
+  CHECKPOINT_FILETER: False 
+  OLD_CHECKPONT: True 
+
+  LAYER_SCALE: True 
+  LAYER_SCALE_INIT: 1e-3
+
+
+DATALOADER:
+  USE_WEIGHTED_SAMPLER: True
+  UNIFIED_DATASET: True 
+  NUM_WORKERS: 16
+
+  PADDING_TO_MAX: False # True for debugging or token moe with distributed moe 
+
+
+  
+####################################### Optimizer #######################################
+SOLVER:
+  NAME: 'Adam'
+  TORCH_OPTIMIZER: True
+  PARAMS_SEPERATE: True
+  # PARAMS_GROUP: True
+  # EPOCH: 1
+  MAX_ITER: 40000
+  CHECKPOINT_PERIOD: 40000
+  EVAL_PERIOD: 2000
+  BASE_LR: 0.00002
+  BIAS_LR_FACTOR: 1.0
+  WEIGHT_DECAY: 0.00000001
+  WEIGHT_DECAY_NORM: 0.0
+  WEIGHT_DECAY_BIAS: 0.0
+  WEIGHT_DECAY_EMBEDDING: 0.0
+  MOMENTUM: 0.9
+  DAMPENING: 0.0
+  NESTEROV: 0.0
+  BETAS: [0.9, 0.999]
+  EPS: 1e-6
+  GRAD_CLIP: 0.1
+  GRAD_CLIP_TYPE: 'norm'
+  ACCUM_ITER: 0
+  AMP_FP16: True
+  APEX_FP16: False # dangerous
+  WRITE_PERIOD: 50
+  MIN_LOSS_SCLE: 2048.0
+  LOSS_SCALE_WINDOW: 200
+
+  
+####################################### lr scheduler ####################################### 
+LR_SCHEDULER:
+  NAME: 'WarmupCosine'
+  WARMUP: 4000
+  MIN_LR: 0.00000001
+
+
+find_unused_parameters: true
+
+MOE: 
+  MOE: True 
+  MOE_TYPE: 'attribute'
+  TAG_Transform: True
+  ATTRIBUTE_LENGTH: 8
+  EP_WORLD_SIZE: 1 # tag moe only 
+  NUM_EXPERTS: 8
+  TOP_K: 2
+  CAPACITY_FACTOR: 3.0 
+  EVAL_MIN_CAPACITY: 4.0
+  MIN_CAPACITY: 4
+  NOISY_GATE_POLICY: 'vmoe'
+  MOE_PARAM_GROUP: True 
+  MOE_EXPERT_TYPE: 'FFN,SA'
+  SA_LINEAR_OUT_MOE: True
+  MOE_EXPERT_LOCATION: 'odd' # 'odd'
+  # MOE_LAYER_START_IDX: 3
+  # MOE_LAYER_END_IDX: 21
+  # MOE_LAYER_START_IDX: 18
+  # MOE_LAYER_END_IDX: 12 
+  BATCH_PRIO: True 
+  USE_TUTEL: True
+  FFN_SHARE_GATE_DECISION: True

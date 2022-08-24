@@ -1,0 +1,22 @@
+_BASE_: "../../base_model_bert_l12_h768.yaml"
+
+
+MODEL:
+  META_ARCHITECTURE: 'MultiTaskTransformerEncoder'
+  ENCODER: 'UnifiedBertEncoder'
+
+  SHARE_LAYERNORM: True
+  BERT:
+    NORMALIZE_DECISION: "BERTPre" 
+    DROP_PATH_PROB: 0.1
+    DROP_PATH_PROB_FIXED: True
+
+
+  MODEL_EMA: False
+  MODEL_EMA_DECAY: 0.9999
+
+  MAEParamsInit: True
+  POSEMBEDFIX: True
+
+  LAYER_SCALE: True 
+  LAYER_SCALE_INIT: 1e-3

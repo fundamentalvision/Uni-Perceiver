@@ -1,0 +1,197 @@
+_BASE_: "base_model_bert_l12_h192.yaml"
+
+SHARED_TARGETS:
+
+  - 
+    NAME: 'ImageNet1k'
+    SHARED_TARGETS_CFG:
+      FILE_PATH: 'open_source_dataset/imagenet_class_name_CLIP_with_endoftext.pkl'
+      DISTRIBUTED: True
+  
+  # -
+  #   NAME: 'Vocab_Word'
+  #   SHARED_TARGETS_CFG:
+  #     FILE_PATH: 'open_source_dataset/vocabulary_CLIP_with_endoftext.pkl'
+  #     DISTRIBUTED: True
+
+
+
+TASKS:
+
+  - 
+    NAME: imagenet
+    DATASETS:
+      TRAIN: 'ImageNetDataset'
+      VAL: 'ImageNetDataset'
+      TASK_TYPE: 'image_classification'
+      DATASET_NAME: 'ImageNet1k'
+      TARGET_SET: ['ImageNet1k']
+      
+    DATALOADER:
+      TRAIN_BATCH_SIZE: 4
+      TEST_BATCH_SIZE: 4
+      NUM_WORKERS: 4
+      FEATS_FOLDER: 'open_source_dataset/imagenet'
+      S3_PATH: 'cluster2:s3://imagenet'
+      ANNO_FOLDER:  'open_source_dataset/imagenet/meta'
+      SAMPLING_WEIGHT: 1.0
+      CLASS_NAME_FILE: 'open_source_dataset/imagenet_class_name.pkl'
+      MIXUP: 0.8
+      CUTMIX: 1.0
+      MIXUP_PROB: 1.0
+      MIXUP_SWITCH_PROB: 0.5
+      MIXUP_MODE: 'batch'
+      MIXUP_LABEL_SMOOTHING: 0.1
+    MODEL:
+      MAX_SEQ_LEN: -1
+      LABELS_NUM: 1000
+      TEMP_NAME: logit_scale_img_cls
+    LOSSES:
+      NAMES: ['SoftTargetCrossEntropy', 'Accuracy']
+      LOSS_WEIGHT: 1.0
+      REDUCTION: 'mean'
+      # LOSS_FP32: True
+    INFERENCE:
+      NAME: 'ImageNetEvaler'
+      ID_KEY: 'image_id'
+      VALUE: 'cls_logits'
+      VAL_ANNFILE: 'open_source_dataset/imagenet/meta/val.txt'
+      TEST_ANNFILE: ''
+      GENERATION_MODE: False
+
+
+ENGINE:
+  NAME: 'UnifiedTrainer'
+ 
+MODEL:
+  META_ARCHITECTURE: 'MultiTaskTransformerEncoder'
+  ENCODER: 'UnifiedBertEncoder'
+
+  IN_TUNING: True # use IN1k instead of 22k
+  SHARE_LAYERNORM: True
+  BERT:
+    NORMALIZE_DECISION: "BERTPre" 
+    DROP_PATH_PROB: 0.1
+    NUM_HIDDEN_LAYERS: 1
+    DROP_PATH_PROB_FIXED: True
+
+    UNIFY_QKV: True
+  
+
+  OLD_CHECKPONT: True
+  
+  MODEL_EMA: False
+  MODEL_EMA_DECAY: 0.9999
+
+  MAEParamsInit: True
+  POSEMBEDFIX: True
+
+
+  IMG_INPUT_SIZE: 224
+  PATCH_SIZE: 16
+  # POSEMBED_SCALE: !!python/object/apply:eval ["160/224"]
+  # CHECKPOINT_FILETER: False 
+
+  LAYER_SCALE: True 
+  LAYER_SCALE_INIT: 1e-3
+
+
+DATALOADER:
+  USE_WEIGHTED_SAMPLER: True
+  UNIFIED_DATASET: True 
+  NUM_WORKERS: 16
+
+  PADDING_TO_MAX: False # True for debugging or token moe with distributed moe 
+
+
+  
+####################################### Optimizer #######################################
+SOLVER:
+  NAME: 'Adam'
+  TORCH_OPTIMIZER: True
+  PARAMS_SEPERATE: True
+  # PARAMS_GROUP: True
+  # EPOCH: 1
+  MAX_ITER: 150000
+  CHECKPOINT_PERIOD: 5000
+  EVAL_PERIOD: 500000
+  BASE_LR: 0.001
+  BIAS_LR_FACTOR: 1.0
+  WEIGHT_DECAY: 0.05
+  WEIGHT_DECAY_NORM: 0.0
+  WEIGHT_DECAY_BIAS: 0.0
+  WEIGHT_DECAY_EMBEDDING: 0.0
+  MOMENTUM: 0.9
+  DAMPENING: 0.0
+  NESTEROV: 0.0
+  BETAS: [0.9, 0.95]
+  EPS: 1e-6
+  GRAD_CLIP: 0.1
+  GRAD_CLIP_TYPE: 'norm'
+  ACCUM_ITER: 0
+  AMP_FP16: True
+  APEX_FP16: False # dangerous
+
+  WRITE_PERIOD: 50
+  MIN_LOSS_SCLE: 2048.0
+  # BF16: False # True
+  # ZEROSTAGE: 2
+
+  LOSS_SCALE_WINDOW: 200
+
+
+
+
+
+  
+####################################### lr scheduler ####################################### 
+LR_SCHEDULER:
+  NAME: 'WarmupCosine'
+  WARMUP: 5000
+  MIN_LR: 0.000001
+
+
+
+
+####################################### evaluation ####################################### 
+INFERENCE:
+
+  VOCAB: 'CLIP'
+  ITER_BASED: True
+
+
+find_unused_parameters: true
+
+# ENCODERS:
+#   -
+#     NAME: VisualEncoder
+#     TYPE: VisualEncoder
+#     DROP_PATH_PROB: 0.0
+#     HIDDEN_SIZE: 192
+#     HIDDEN_DROPOUT_PROB: 0.
+#     HIDDEN_ACT: "gelu"
+#     NUM_ATTENTION_HEADS: 3
+#     INTERMEDIATE_SIZE: 768
+#     INTERMEDIATE_DROP: 0.
+#     FFN_DROPOUT_PROB: 0.
+#     ATTENTION_PROBS_DROPOUT_PROB: 0.
+#     NUM_HIDDEN_LAYERS: 6
+#     NUM_GENERATION_LAYERS: 0
+#     DROP_PATH_PROB_FIXED: True
+
+#   -
+#     NAME: TextEncoder
+#     TYPE: TextEncoder
+#     DROP_PATH_PROB: 0.0
+#     HIDDEN_SIZE: 192
+#     HIDDEN_DROPOUT_PROB: 0.
+#     HIDDEN_ACT: "gelu"
+#     NUM_ATTENTION_HEADS: 3
+#     INTERMEDIATE_SIZE: 768
+#     INTERMEDIATE_DROP: 0.
+#     FFN_DROPOUT_PROB: 0.
+#     ATTENTION_PROBS_DROPOUT_PROB: 0.
+#     NUM_HIDDEN_LAYERS: 6
+#     NUM_GENERATION_LAYERS: 0
+#     DROP_PATH_PROB_FIXED: True 
+

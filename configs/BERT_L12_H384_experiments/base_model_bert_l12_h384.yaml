@@ -1,0 +1,80 @@
+
+######################################### MODEL #########################################
+MODEL:
+  VOCAB_SIZE: 49411 # include <BOS>/<EOS>
+  META_ARCHITECTURE: 'MultiTaskTransformerEncoder'
+  ENCODER: ''
+  ENCODER_DIM: 384
+  DECODER: ''
+  DECODER_DIM: 384
+
+  PREDICTOR: 'EmbedClsAsRetrievalPredictor'
+  FEATURE_GATHER: True
+  LEARN_TEMP: True
+  PRED_USE_NORM: True
+  PRED_TEMPERATURE: 0.07
+
+  BertParamsInit: True
+
+  CLS_TOKEN: False
+
+  QUEUE_LEN: 1024
+  MAX_LABEL_LEN: 12
+
+  OUTPUT_PROJ: True # output projection
+ 
+
+# #################################### Token embedding ####################################
+  TOKEN_EMBED:
+    NAME: 'TokenBaseEmbedding'
+    DIM: 384
+    ACTIVATION: 'none'
+    USE_NORM: True
+    DROPOUT: 0.0
+    POSITION: 'NNEmbeddingEncoding'
+    POSITION_MAX_LEN: 512
+    TYPE_VOCAB_SIZE: 2
+
+# #################################### Visual embedding ####################################
+  VISUAL_EMBED:
+    NAME: 'VisualPatchEmbedding'
+    IN_DIM: 3
+    OUT_DIM: 384
+    ACTIVATION: 'none'
+    USE_NORM: True
+    DROPOUT: 0.0
+    PATCH_SIZE: 16
+    TYPE_SIZE: 1 # image to encoder
+
+# #################################### video embedding ####################################
+  VIDEO_EMBED:
+    NAME: 'VideoBaseEmbedding'
+    IN_DIM: 768
+    OUT_DIM: 384
+    ACTIVATION: 'none'
+    USE_NORM: True
+    DROPOUT: 0.0
+    TYPE_SIZE: 1 # video to encoder
+    POSITION: 'NNEmbeddingEncoding'
+    MAX_LENGTH: 1600
+    PATCH_SIZE_S: 16
+    PATCH_SIZE_T: 1
+    DIVIDE_ST_POS: True
+    USE_VISUAL_TOKENIZER: True
+    USE_VISUAL_POS: True
+    MAX_FRAMES: 8
+
+####################################### BERT ############################################
+  BERT:
+    DROP_PATH_PROB: 0.1
+    HIDDEN_SIZE: 384
+    HIDDEN_DROPOUT_PROB: 0.
+    HIDDEN_ACT: "gelu"
+    NUM_ATTENTION_HEADS: 6
+    INTERMEDIATE_SIZE: 1536
+    INTERMEDIATE_DROP: 0.
+    FFN_DROPOUT_PROB: 0.
+    ATTENTION_PROBS_DROPOUT_PROB: 0.
+    NUM_HIDDEN_LAYERS: 12
+    NUM_GENERATION_LAYERS: 0
+  

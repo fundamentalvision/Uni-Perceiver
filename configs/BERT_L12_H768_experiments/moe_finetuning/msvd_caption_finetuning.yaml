@@ -1,0 +1,168 @@
+_BASE_: "../base_model_bert_l12_h768.yaml"
+
+SHARED_TARGETS:
+
+  -
+    NAME: 'Vocab_Word'
+    SHARED_TARGETS_CFG:
+      FILE_PATH: 'open_source_dataset/vocabulary_CLIP_with_endoftext.pkl'
+      DISTRIBUTED: True
+
+TASKS:
+  -
+    NAME: msvd_caption
+    DATASETS:
+      TRAIN: 'MSVDDataset'
+      TEST: 'MSVDDataset'
+      TASK_TYPE: 'video_caption'
+      DATASET_NAME: 'MSVDDataset'
+      TARGET_SET: ['Vocab_Word']
+    DATALOADER:
+      TRAIN_BATCH_SIZE: 2 #6
+      TEST_BATCH_SIZE: 4
+      NUM_WORKERS: 4
+      FEATS_FOLDER: 'open_source_dataset/msvd_dataset/YouTubeClips'
+      ANNO_FOLDER:  'open_source_dataset/msvd_dataset/new_annotations'
+      STRIDE: 32
+      FRAMES_PER_CLIP: 4
+      S3_PATH: 's3://msvd/YouTubeClips/'
+      TIMESFORMER_AUG: True
+      SAMPLING_WEIGHT: 1.0
+    MODEL:
+      MAX_SEQ_LEN: 30
+      EVAL_MAX_SEQ_LEN: 21
+      TEMP_NAME: logit_scale_caption
+    LOSSES:
+      NAMES: ['LabelSmoothingCrossEntropy', 'Accuracy']
+      # NAMES: ['CrossEntropy', 'Accuracy']
+      LABELSMOOTHING: 0.1
+      LOSS_WEIGHT: 1.0
+      REDUCTION: 'mean'
+    DECODE_STRATEGY:
+      NAME: 'CaptionBeamSearcherV3'
+      BEAM_SIZE: 2
+      # LEN_PENALTY: 2.0
+    INFERENCE:
+      NAME: 'COCOEvaler'
+      VOCAB: 'CLIP'
+      ID_KEY: 'image_id'
+      VALUE: 'caption'
+      VAL_ANNFILE: 'open_source_dataset/msvd_dataset/new_annotations/caption_msvd_val_cocostyle.json'
+      TEST_ANNFILE: 'open_source_dataset/msvd_dataset/new_annotations/caption_msvd_test_cocostyle.json'
+      GENERATION_MODE: True
+
+
+
+
+ENGINE:
+  NAME: 'UnifiedTrainer'
+ 
+MODEL:
+  META_ARCHITECTURE: 'MultiTaskTransformerEncoder'
+  ENCODER: 'UnifiedBertEncoder'
+
+  SHARE_LAYERNORM: True
+  BERT:
+    NORMALIZE_DECISION: "BERTPre" 
+    DROP_PATH_PROB: 0.1
+    DROP_PATH_PROB_FIXED: True
+
+
+  MODEL_EMA: False
+  MODEL_EMA_DECAY: 0.9999
+
+  MAEParamsInit: True
+  POSEMBEDFIX: True
+
+
+  IMG_INPUT_SIZE: 224
+  PATCH_SIZE: 16
+  
+  # POSEMBED_SCALE: !!python/object/apply:eval ["160/224"]
+  CHECKPOINT_FILETER: False 
+  OLD_CHECKPONT: True 
+
+  LAYER_SCALE: True 
+  LAYER_SCALE_INIT: 1e-3
+
+
+DATALOADER:
+  USE_WEIGHTED_SAMPLER: True
+  UNIFIED_DATASET: True 
+  NUM_WORKERS: 16
+
+  PADDING_TO_MAX: False # True for debugging or token moe with distributed moe 
+
+
+  
+####################################### Optimizer #######################################
+SOLVER:
+  NAME: 'Adam'
+  TORCH_OPTIMIZER: True
+  PARAMS_SEPERATE: True
+  # PARAMS_GROUP: True
+  # EPOCH: 1
+  MAX_ITER: 1000
+  CHECKPOINT_PERIOD: 500
+  EVAL_PERIOD: 200
+  BASE_LR: 0.00002
+  BIAS_LR_FACTOR: 1.0
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_NORM: 0.0
+  WEIGHT_DECAY_BIAS: 0.0
+  WEIGHT_DECAY_EMBEDDING: 0.0
+  MOMENTUM: 0.9
+  DAMPENING: 0.0
+  NESTEROV: 0.0
+  BETAS: [0.9, 0.95]
+  EPS: 1e-6
+  GRAD_CLIP: 0.1
+  GRAD_CLIP_TYPE: 'norm'
+  ACCUM_ITER: 0
+  AMP_FP16: True
+  APEX_FP16: False # dangerous
+
+  WRITE_PERIOD: 50
+  MIN_LOSS_SCLE: 2048.0
+  # BF16: False # True
+  # ZEROSTAGE: 2
+
+  LOSS_SCALE_WINDOW: 200
+
+
+
+
+
+  
+####################################### lr scheduler ####################################### 
+LR_SCHEDULER:
+  NAME: 'WarmupCosine'
+  WARMUP: 100
+  MIN_LR: 0.000001
+
+
+find_unused_parameters: true
+
+MOE: 
+  MOE: True 
+  MOE_TYPE: 'attribute'
+  TAG_Transform: True
+  ATTRIBUTE_LENGTH: 8
+  EP_WORLD_SIZE: 1 # tag moe only 
+  NUM_EXPERTS: 8
+  TOP_K: 2
+  CAPACITY_FACTOR: 3.0 
+  EVAL_MIN_CAPACITY: 4.0
+  MIN_CAPACITY: 4
+  NOISY_GATE_POLICY: 'vmoe'
+  MOE_PARAM_GROUP: True 
+  MOE_EXPERT_TYPE: 'FFN,SA'
+  SA_LINEAR_OUT_MOE: True
+  MOE_EXPERT_LOCATION: 'odd' # 'odd'
+  # MOE_LAYER_START_IDX: 3
+  # MOE_LAYER_END_IDX: 21
+  # MOE_LAYER_START_IDX: 18
+  # MOE_LAYER_END_IDX: 12 
+  BATCH_PRIO: True 
+  USE_TUTEL: True
+  FFN_SHARE_GATE_DECISION: True

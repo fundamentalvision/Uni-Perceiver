@@ -1,0 +1,310 @@
+_BASE_: "base_model_bert_l12_h768.yaml"
+
+SHARED_TARGETS:
+
+  - 
+    NAME: 'ImageNet1k'
+    SHARED_TARGETS_CFG:
+      FILE_PATH: 'open_source_dataset/imagenet_class_name_CLIP_with_endoftext.pkl'
+      DISTRIBUTED: False
+
+  # -
+  #   NAME: 'Vocab_Word'
+  #   SHARED_TARGETS_CFG:
+  #     FILE_PATH: 'open_source_dataset/vocabulary_CLIP_with_endoftext.pkl'
+  #     DISTRIBUTED: True
+
+TASKS:
+
+  - 
+    NAME: imagenet
+    DATASETS:
+      TRAIN: 'ImageNetDataset'
+      VAL: 'ImageNetDataset'
+      TASK_TYPE: 'image_classification'
+      DATASET_NAME: 'ImageNet1k'
+      TARGET_SET: ['ImageNet1k']
+      
+    DATALOADER:
+      TRAIN_BATCH_SIZE: 128
+      TEST_BATCH_SIZE: 128
+      NUM_WORKERS: 4 # will be used as numworker for testing loader 
+      FEATS_FOLDER: 'open_source_dataset/imagenet'
+      S3_PATH: 'cluster2:s3://imagenet'
+      ANNO_FOLDER:  'open_source_dataset/imagenet/meta'
+      SAMPLING_WEIGHT: 1.0
+      CLASS_NAME_FILE: 'open_source_dataset/imagenet_class_name.pkl'
+      MIXUP: 0.8
+      CUTMIX: 1.0
+      MIXUP_PROB: 1.0
+      MIXUP_SWITCH_PROB: 0.5
+      MIXUP_MODE: 'batch'
+      MIXUP_LABEL_SMOOTHING: 0.1
+    MODEL:
+      MAX_SEQ_LEN: -1
+      LABELS_NUM: 1000
+      TEMP_NAME: logit_scale_img_cls
+    LOSSES:
+      NAMES: ['SoftTargetCrossEntropy', 'Accuracy']
+      LOSS_WEIGHT: 1.0
+      REDUCTION: 'mean'
+      # LOSS_FP32: True
+    INFERENCE:
+      NAME: 'ImageNetEvaler'
+      ID_KEY: 'image_id'
+      VALUE: 'cls_logits'
+      VAL_ANNFILE: 'open_source_dataset/imagenet/meta/val.txt'
+      TEST_ANNFILE: ''
+      GENERATION_MODE: False
+
+  # -
+  #   NAME: bookswiki_pretrain
+  #   DATASETS:
+  #     TRAIN: 'GeneralCorpusDataset'
+  #     TASK_TYPE: 'text_mlm'
+  #     DATASET_NAME: 'BooksWiki'
+  #     TARGET_SET: ['Vocab_Word']
+  #   DATALOADER:
+  #     TRAIN_BATCH_SIZE: 128
+  #     TEST_BATCH_SIZE: 32
+  #     NUM_WORKERS: 2
+  #     ANNO_FOLDER:  'open_source_dataset/bert_pretrain_data/bookswiki'
+  #     # ANNO_FOLDER:  'open_source_dataset/bert_pretrain_data/bookswiki'
+  #     SEQ_PER_SAMPLE:  1
+  #     SAMPLER: NodeDistributed
+  #     CACHE_MODE: True
+  #     SEQ_PER_SAMPLE: 128
+  #     MIN_SEQ_PER_SAMPLE: 128
+  #     APPEND_EOS: True
+  #     ONE_STREAM: False
+  #     SAMPLING_WEIGHT: 1.0
+  #     RANDOM_MASK: True
+  #   MODEL:
+  #     MAX_SEQ_LEN: 128
+  #     TEMP_NAME: logit_scale_text_mlm
+  #   LOSSES:
+  #     NAMES: ['CrossEntropy', 'Accuracy']
+  #     LOSS_WEIGHT: 0.33333
+  #     REDUCTION: 'mean'
+  #   INFERENCE:
+  #     VOCAB: 'CLIP'
+  #     GENERATION_MODE: False
+
+  # -
+  #   NAME: mscoco_caption
+  #   DATASETS:
+  #     TRAIN: 'ImageTextPairDataset'
+  #     # VAL: 'ImageTextPairDataset'
+  #     # TEST: 'ImageTextPairDataset'
+  #     TASK_TYPE: 'image_caption'
+  #     DATASET_NAME: 'MSCOCO'
+  #     TARGET_SET: ['Vocab_Word']
+  #   DATALOADER:
+  #     TRAIN_BATCH_SIZE: 64
+  #     TEST_BATCH_SIZE: 32
+  #     NUM_WORKERS: 4
+  #     FEATS_FOLDER: 'open_source_dataset/mscoco_dataset/coco_origin'
+  #     ANNO_FOLDER:  'open_source_dataset/mscoco_dataset/new_annotations'
+  #     S3_PATH: 's3://coco/'
+  #     SEQ_PER_SAMPLE:  1
+      # CACHE_MODE: True
+      # CIRCULAR_CACHE_MODE: False
+      # ZIP_MODE: False
+      # CACHE_ORIGIN_IMAGE: False
+      # RANDOM_CAPTION: False
+      # AS_NUMPY_AS_POSSIBLE: False
+  #     SAMPLING_WEIGHT: 1.0
+  #     TRANSFORM: 'clip_transforms'
+  #     RANDOM_MASK: True
+  #   MODEL:
+  #     MAX_SEQ_LEN: 50
+  #     EVAL_MAX_SEQ_LEN: 21
+  #     TEMP_NAME: logit_scale_caption
+  #   LOSSES:
+  #     NAMES: ['CrossEntropy', 'Accuracy']
+  #     LOSS_WEIGHT: 0.33333
+  #     REDUCTION: 'mean'
+  #   DECODE_STRATEGY:
+  #     NAME: 'CaptionBeamSearcherV3'
+  #     BEAM_SIZE: 2
+  #     # LEN_PENALTY: 1.0
+  #   INFERENCE:
+  #     NAME: 'COCOEvaler'
+  #     VOCAB: 'CLIP'
+  #     ID_KEY: 'image_id'
+  #     VALUE: 'caption'
+  #     VAL_ANNFILE: 'open_source_dataset/mscoco_dataset/new_annotations/captions_val5k.json'
+  #     TEST_ANNFILE: 'open_source_dataset/mscoco_dataset/new_annotations/captions_test5k.json'
+  #     GENERATION_MODE: True
+
+  # -
+  #   NAME: mscoco_retrieve
+  #   DATASETS:
+  #     TRAIN: 'ImageTextPairDataset'
+  #     # TEST: 'ImageTextPairDataset'
+  #     TASK_TYPE: 'image_retrieval'
+  #     DATASET_NAME: 'MSCOCO'
+  #   DATALOADER:
+  #     TRAIN_BATCH_SIZE: 100
+  #     TEST_BATCH_SIZE: 32
+  #     NUM_WORKERS: 1
+  #     FEATS_FOLDER: 'open_source_dataset/mscoco_dataset/coco_origin'
+  #     ANNO_FOLDER:  'open_source_dataset/mscoco_dataset/new_annotations'
+  #     S3_PATH: 's3://coco/'
+  #     SEQ_PER_SAMPLE:  1
+      # CACHE_MODE: True
+      # CIRCULAR_CACHE_MODE: False
+      # ZIP_MODE: False
+      # CACHE_ORIGIN_IMAGE: False
+      # RANDOM_CAPTION: False
+      # AS_NUMPY_AS_POSSIBLE: False
+  #     SAMPLING_WEIGHT: 1.0
+  #     TRANSFORM: 'clip_transforms'
+  #   MODEL:
+  #     MAX_SEQ_LEN: 50
+  #     TEMP_NAME: logit_scale_retrieve
+  #   LOSSES:
+  #     NAMES: ['LabelSmoothingCrossEntropy', 'Accuracy']
+  #     LABELSMOOTHING: 0.1
+  #     LOSS_WEIGHT: 1.0
+  #     REDUCTION: 'mean'
+  #   INFERENCE:
+  #     VOCAB: 'CLIP'
+  #     ID_KEY: 'image_id'
+  #     VALUE: 'caption'
+  #     NAME: 'RetrievalEvaler'
+  #     VAL_ANNFILE: 'open_source_dataset/flickr30k/all_data_final_val_set0_2014.jsonline'
+  #     TEST_ANNFILE: 'open_source_dataset/flickr30k/all_data_final_test_set0_2014.jsonline'
+  #     GENERATION_MODE: False
+
+
+
+ENGINE:
+  NAME: 'UnifiedTrainer'
+ 
+MODEL:
+  META_ARCHITECTURE: 'MultiTaskTransformerEncoder'
+  ENCODER: 'UnifiedBertEncoder'
+
+  IN_TUNING: True # use IN1k instead of 22k
+  SHARE_LAYERNORM: True
+  BERT:
+    NORMALIZE_DECISION: "BERTPre" 
+    DROP_PATH_PROB: 0.1
+    DROP_PATH_PROB_FIXED: True
+
+    UNIFY_QKV: True
+  
+  MODEL_EMA: False
+  MODEL_EMA_DECAY: 0.9999
+
+  MAEParamsInit: True
+  POSEMBEDFIX: True
+
+
+  IMG_INPUT_SIZE: 224
+  PATCH_SIZE: 16
+
+  LAYER_SCALE: True 
+  LAYER_SCALE_INIT: 1e-3
+
+
+DATALOADER:
+  USE_WEIGHTED_SAMPLER: True
+  UNIFIED_DATASET: True 
+  NUM_WORKERS: 16
+
+  PADDING_TO_MAX: False # True for debugging or token moe with distributed moe 
+
+
+  
+####################################### Optimizer #######################################
+SOLVER:
+  NAME: 'Adam'
+  TORCH_OPTIMIZER: True
+  PARAMS_SEPERATE: True
+  # PARAMS_GROUP: True
+  # EPOCH: 1
+  MAX_ITER: 200000
+  CHECKPOINT_PERIOD: 50000
+  EVAL_PERIOD: 500000
+  BASE_LR: 0.001
+  BIAS_LR_FACTOR: 1.0
+  WEIGHT_DECAY: 0.05
+  WEIGHT_DECAY_NORM: 0.0
+  WEIGHT_DECAY_BIAS: 0.0
+  WEIGHT_DECAY_EMBEDDING: 0.0
+  MOMENTUM: 0.9
+  DAMPENING: 0.0
+  NESTEROV: 0.0
+  BETAS: [0.9, 0.95]
+  EPS: 1e-6
+  GRAD_CLIP: 0.1
+  GRAD_CLIP_TYPE: 'norm'
+  ACCUM_ITER: 0
+  AMP_FP16: True
+  APEX_FP16: False # dangerous
+
+  WRITE_PERIOD: 50
+  MIN_LOSS_SCLE: 2048.0
+  # BF16: False # True
+  # ZEROSTAGE: 2
+
+  LOSS_SCALE_WINDOW: 200
+
+
+
+
+
+  
+####################################### lr scheduler ####################################### 
+LR_SCHEDULER:
+  NAME: 'WarmupCosine'
+  WARMUP: 20000
+  MIN_LR: 0.000001
+
+
+
+
+####################################### evaluation ####################################### 
+INFERENCE:
+
+  VOCAB: 'CLIP'
+  ITER_BASED: True
+
+
+find_unused_parameters: true
+
+# ENCODERS:
+#   -
+#     NAME: VisualEncoder
+#     TYPE: VisualEncoder
+#     DROP_PATH_PROB: 0.0
+#     HIDDEN_SIZE: 192
+#     HIDDEN_DROPOUT_PROB: 0.
+#     HIDDEN_ACT: "gelu"
+#     NUM_ATTENTION_HEADS: 3
+#     INTERMEDIATE_SIZE: 768
+#     INTERMEDIATE_DROP: 0.
+#     FFN_DROPOUT_PROB: 0.
+#     ATTENTION_PROBS_DROPOUT_PROB: 0.
+#     NUM_HIDDEN_LAYERS: 6
+#     NUM_GENERATION_LAYERS: 0
+#     DROP_PATH_PROB_FIXED: True
+
+#   -
+#     NAME: TextEncoder
+#     TYPE: TextEncoder
+#     DROP_PATH_PROB: 0.0
+#     HIDDEN_SIZE: 192
+#     HIDDEN_DROPOUT_PROB: 0.
+#     HIDDEN_ACT: "gelu"
+#     NUM_ATTENTION_HEADS: 3
+#     INTERMEDIATE_SIZE: 768
+#     INTERMEDIATE_DROP: 0.
+#     FFN_DROPOUT_PROB: 0.
+#     ATTENTION_PROBS_DROPOUT_PROB: 0.
+#     NUM_HIDDEN_LAYERS: 6
+#     NUM_GENERATION_LAYERS: 0
+#     DROP_PATH_PROB_FIXED: True 
+

@@ -1,0 +1,88 @@
+_BASE_: "base.yaml"
+
+SHARED_TARGETS:
+  - 
+    NAME: 'MRPC-target'
+    SHARED_TARGETS_CFG:
+      FILE_PATH: 'open_source_dataset/GLUE_classnames/MRPC_class_name_CLIP_with_endoftext.pkl'
+      DISTRIBUTED: False
+TASKS:
+  -
+    NAME: MRPC
+    DATASETS:
+      TRAIN: 'GLUEDataset'
+      # TEST: 'GLUEDataset'
+      VAL: 'GLUEDataset'
+      TASK_TYPE: 'text_classification'
+      DATASET_NAME: 'MRPC'
+      TARGET_SET: ['MRPC-target']
+    DATALOADER:
+      TRAIN_BATCH_SIZE: 16
+      TEST_BATCH_SIZE: 64
+      NUM_WORKERS: 4
+      ANNO_FOLDER:  'open_source_dataset/bert_pretrain_data/glue_data/'
+
+    MODEL:
+      MAX_SEQ_LEN: 256
+      TEMP_NAME: logit_scale_text_mlm
+    LOSSES:
+      NAMES: ['LabelSmoothingCrossEntropy', 'Accuracy']
+      LABELSMOOTHING: 0.1
+      # LOSS_WEIGHT: 1
+      REDUCTION: 'mean'
+      LOSS_FP32: False
+    INFERENCE:
+      NAME: 'GLUEEvaler'
+      VOCAB: 'CLIP'
+      GENERATION_MODE: False
+
+
+  
+
+ENGINE:
+  NAME: 'UnifiedTrainer'
+
+DATALOADER:
+  USE_WEIGHTED_SAMPLER: True
+  UNIFIED_DATASET: True 
+  NUM_WORKERS: 16
+
+######################################### MODEL #########################################
+MODEL:
+  MODEL_EMA: False
+  MODEL_EMA_DECAY: 0.9999
+
+  
+####################################### Optimizer #######################################
+SOLVER:
+  NAME: 'Adam'
+  MAX_ITER: 2500
+  CHECKPOINT_PERIOD: 10000
+  EVAL_PERIOD: 100
+  CHECKPOINT_MAX_SAVE: 2
+  BASE_LR: 0.00001
+  BIAS_LR_FACTOR: 1.0
+  WEIGHT_DECAY: 0.1
+  WEIGHT_DECAY_NORM: 0.0
+  WEIGHT_DECAY_BIAS: 0.0
+  MOMENTUM: 0.9
+  DAMPENING: 0.0
+  NESTEROV: 0.0
+  BETAS: [0.9, 0.98]
+  EPS: 1e-8
+  GRAD_CLIP: 0.5
+  GRAD_CLIP_TYPE: 'norm'
+  ACCUM_ITER: 0
+  AMP_FP16: True
+  APEX_FP16: False # dangerous
+  WRITE_PERIOD: 20
+  
+####################################### lr scheduler ####################################### 
+LR_SCHEDULER:
+  NAME: 'WarmupCosine'
+  WARMUP: 150
+  MIN_LR: 0.00000001
+
+
+
+find_unused_parameters: true

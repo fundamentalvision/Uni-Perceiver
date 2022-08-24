@@ -1,0 +1,73 @@
+
+######################################### MODEL #########################################
+MODEL:
+  VOCAB_SIZE: 49411 # include <BOS>/<EOS>
+  META_ARCHITECTURE: 'MultiTaskTransformerEncoder'
+  ENCODER: 'UnifiedBertEncoder_v3'
+  ENCODER_DIM: 1024
+  DECODER: ''
+  DECODER_DIM: 1024
+
+  PREDICTOR: 'EmbedClsAsRetrievalPredictor'
+  FEATURE_GATHER: True
+  LEARN_TEMP: True
+  PRED_USE_NORM: True
+  PRED_TEMPERATURE: 0.07
+
+  BertParamsInit: True
+
+  CLS_TOKEN: False
+
+  QUEUE_LEN: 1024
+  MAX_LABEL_LEN: 12
+
+  OUTPUT_PROJ: True # output projection
+ 
+
+# #################################### Token embedding ####################################
+  TOKEN_EMBED:
+    NAME: 'TokenBaseEmbedding'
+    DIM: 1024
+    ACTIVATION: 'none'
+    USE_NORM: True
+    DROPOUT: 0.0
+    POSITION: 'NNEmbeddingEncoding'
+    POSITION_MAX_LEN: 512
+    TYPE_VOCAB_SIZE: 2
+
+# #################################### Visual embedding ####################################
+  VISUAL_EMBED:
+    NAME: 'none'
+
+# #################################### video embedding ####################################
+  VIDEO_EMBED:
+    NAME: 'VideoBaseEmbedding'
+    IN_DIM: 768
+    OUT_DIM: 1024
+    ACTIVATION: 'none'
+    USE_NORM: True
+    DROPOUT: 0.0
+    TYPE_SIZE: 1 # video to encoder
+    POSITION: 'NNEmbeddingEncoding'
+    MAX_LENGTH: 1600
+    PATCH_SIZE_S: 16
+    PATCH_SIZE_T: 1
+    DIVIDE_ST_POS: True
+    USE_VISUAL_TOKENIZER: True
+    USE_VISUAL_POS: True
+    MAX_FRAMES: 8
+
+####################################### BERT ############################################
+  BERT:
+    DROP_PATH_PROB: 0.1
+    HIDDEN_SIZE: 1024
+    HIDDEN_DROPOUT_PROB: 0.
+    HIDDEN_ACT: "gelu"
+    NUM_ATTENTION_HEADS: 16
+    INTERMEDIATE_SIZE: 4096
+    INTERMEDIATE_DROP: 0.
+    FFN_DROPOUT_PROB: 0.
+    ATTENTION_PROBS_DROPOUT_PROB: 0.
+    NUM_HIDDEN_LAYERS: 24
+    NUM_GENERATION_LAYERS: 0
+  

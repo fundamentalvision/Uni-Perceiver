@@ -1,0 +1,9 @@
+_BASE_: "7tasks_berttiny_training.yaml"
+
+####################################### Optimizer #######################################
+SOLVER:
+  
+  AMP_FP16: False
+  APEX_FP16: True # dangerous
+  APEX_OPT_LEVEL: 'O2'
+  CHECKPOINT_PERIOD: 100000

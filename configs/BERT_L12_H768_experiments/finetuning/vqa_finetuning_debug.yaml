@@ -1,0 +1,127 @@
+_BASE_: "../base_model_bert_l12_h768.yaml"
+
+SHARED_TARGETS:
+
+  
+  -
+    NAME: 'VQA_Answer'
+    SHARED_TARGETS_CFG:
+      FILE_PATH: 'open_source_dataset/VQA_Answers_CLIP_with_endoftext.pkl'
+      DISTRIBUTED: True
+
+TASKS:
+  -
+    NAME: vqa
+    DATASETS:
+      TRAIN: 'VQADataset'
+      VAL: 'VQADataset'
+      # TEST: 'VQADataset'
+      DATASET_NAME: 'VQA'
+      TASK_TYPE: 'vqa'
+      TARGET_SET: ['VQA_Answer']
+    DATALOADER:
+      TRAIN_BATCH_SIZE: 64
+      TEST_BATCH_SIZE: 128
+      NUM_WORKERS: 2
+      FEATS_FOLDER: 'open_source_dataset/mscoco_dataset/coco_origin'
+      ANNO_FOLDER: 'open_source_dataset/VQA'
+      SEQ_PER_SAMPLE:  1
+      MAX_FEAT_NUM: 51
+      SAMPLING_WEIGHT: 1.0
+      TRANSFORM: 'clip_transforms'
+      DO_AS_GEN: True
+      SINGLE_CLASS: True
+    MODEL:
+      MAX_SEQ_LEN: 23
+      TEMP_NAME: logit_scale_downstream
+    LOSSES:
+      # not single class 
+      # NAMES: ['BCEWithLogits']
+      # LOSS_WEIGHT: 0.05
+      # for single class
+      NAMES: ['CrossEntropy', 'Accuracy']
+      LOSS_WEIGHT: 0.1
+    INFERENCE:
+      VOCAB: 'CLIP'
+      NAME: 'VQAEvaler'
+      ID_KEY: 'question_id'
+      VALUE: 'answer'
+      VAL_ANNFILE: 'open_source_dataset/VQA/val_target.pkl'
+      TEST_ANNFILE: ''
+      GENERATION_MODE: False
+
+
+######################################### Engine #########################################
+ENGINE:
+  NAME: 'UnifiedTrainer'
+
+MODEL:
+  META_ARCHITECTURE: 'MultiTaskTransformerEncoder'
+  ENCODER: 'UnifiedBertEncoder'
+
+  BERT:
+    DROP_PATH_PROB: 0.1
+
+
+  MODEL_EMA: False
+  MODEL_EMA_DECAY: 0.9999
+
+  MAEParamsInit: True
+  POSEMBEDFIX: True
+
+  TEMP_NAME: logit_scale_downstream
+  PRED_TEMPERATURE: 0.03
+  LEARN_TEMP: False
+  CLS_TOKEN: True
+
+  IMG_INPUT_SIZE: 224
+  PATCH_SIZE: 16
+  
+  POSEMBED_SCALE: !!python/object/apply:eval ["160/224"]
+  CHECKPOINT_FILETER: False 
+  OLD_CHECKPONT: True 
+
+  LAYER_SCALE: True 
+  LAYER_SCALE_INIT: 1e-3
+
+DATALOADER:
+  USE_WEIGHTED_SAMPLER: True
+  UNIFIED_DATASET: True 
+
+  PADDING_TO_MAX: False # True for debugging or token moe with distributed moe 
+  
+####################################### Optimizer #######################################
+SOLVER:
+  NAME: 'Adam'
+  # EPOCH: 1
+  MAX_ITER: 20000
+  CHECKPOINT_PERIOD: 1000
+  EVAL_PERIOD: 1000
+  CHECKPOINT_MAX_SAVE: 2
+  BASE_LR: 0.00004
+  BIAS_LR_FACTOR: 1.0
+  WEIGHT_DECAY: 0.05
+  WEIGHT_DECAY_NORM: 0.0
+  WEIGHT_DECAY_BIAS: 0.0
+  MOMENTUM: 0.9
+  DAMPENING: 0.0
+  NESTEROV: 0.0
+  BETAS: [0.9, 0.999]
+  EPS: 1e-8
+  GRAD_CLIP: 0.0
+  GRAD_CLIP_TYPE: 'norm'
+  ACCUM_ITER: 0
+  AMP_FP16: True
+  APEX_FP16: False # dangerous
+  WRITE_PERIOD: 50
+  MIN_LOSS_SCLE: 2048.0
+  LOSS_SCALE_WINDOW: 500
+
+####################################### lr scheduler ####################################### 
+LR_SCHEDULER:
+  NAME: 'WarmupCosine'
+  WARMUP: 1000
+  MIN_LR: 0.00000001
+
+
+find_unused_parameters: true
