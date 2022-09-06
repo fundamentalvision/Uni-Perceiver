@@ -219,7 +219,7 @@ class EmbedClsAsRetrievalPredictor(nn.Module):
             q1_hidden_states = q1_hidden_states[:, 0]
         elif task_type == 'text_mlm':
             mask_tokens = target_idx_list[0].ne(-1) # -1 is unmasked position
-            q1_hidden_states = q1_hidden_states[:, :mask_tokens.size(1)][mask_tokens]
+            q1_hidden_states = q1_hidden_states[:, -mask_tokens.size(1):][mask_tokens]
             target_idx_list[0] = target_idx_list[0][mask_tokens]
         elif task_type in ['image_caption', 'video_caption']:
             if self.training:
