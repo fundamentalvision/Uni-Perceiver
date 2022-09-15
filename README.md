@@ -5,7 +5,7 @@ This repository contains training (pre-training, fine-tuning, prompt-tuning), ev
 
 > [Uni-Perceiver](https://arxiv.org/abs/2112.01522): Pre-training Unified Architecture for Generic Perception for Zero-shot and Few-shot Tasks, CVPR 2022.
 
-> [Uni-Perceiver-MoE](https://arxiv.org/abs/2206.04674): Learning Sparse Generalist Models with Conditional MoEs.
+> [Uni-Perceiver-MoE](https://arxiv.org/abs/2206.04674): Learning Sparse Generalist Models with Conditional MoEs, NeurIPS 2022.
 
 
 
