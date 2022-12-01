@@ -477,7 +477,7 @@ And  put them together into a file:
 
     ```
 ### GLUE
-1. Follow the instructions of [this](https://github.com/nyu-mll/GLUE-baselines) to download and preprocess GLUE benchmark data.
+1. Follow the instructions of [this](https://github.com/nyu-mll/GLUE-baselines) to download GLUE benchmark data and refer to [fairseq](https://github.com/facebookresearch/fairseq/blob/main/examples/roberta/README.glue.md) to preprocess datasets.
 2. a) Tokenizing GLUE datasets using [generate_target_sets.ipynb](../tools/generate_target_sets.ipynb).
 
     b) Or you can use the tokenized answers we provide [GLUE_classnames](https://drive.google.com/file/d/1HR7xHsIRsS4iUwGr3CX6h5z_dVn-EJt-/view?usp=sharing).
