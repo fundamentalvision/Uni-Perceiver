@@ -307,7 +307,7 @@ And  put them together into a file:
 
     iii. Running script [video_categories.ipynb](../tools/video_categories.ipynb) to generate "category_mapping.txt".
 
-    b) Or you can directly download the processed files we provide: [K400](https://drive.google.com/file/d/1YqchifEjoovZYJ77Egn5pHv3E1olRIpq/view?usp=sharing), [K700](https://drive.google.com/file/d/1fHdcBRdU27w7OfNijP0ZBsNbxLQSLfRa/view?usp=sharing)
+   <del> b) Or you can directly download the processed files we provide: [K400](https://drive.google.com/file/d/1YqchifEjoovZYJ77Egn5pHv3E1olRIpq/view?usp=sharing), [K700](https://drive.google.com/file/d/1fHdcBRdU27w7OfNijP0ZBsNbxLQSLfRa/view?usp=sharing) </del>
 
 3. a) Tokenizing K400, K700 class names to generate "k400_class_name_CLIP_with_endoftext.pkl" and "k700_class_name_CLIP_with_endoftext.pkl" using [generate_target_sets.ipynb](../tools/generate_target_sets.ipynb)
 
@@ -447,6 +447,9 @@ And  put them together into a file:
 5. a) Tokenizing all the possible answers using [generate_target_sets.ipynb](../tools/generate_target_sets.ipynb).
 
     b) Or you can use the tokenized answers we provide [VQA_Answers](https://drive.google.com/file/d/1X-1blHh2MrYhDq9bkdndNVRZ-49VCsuz/view?usp=sharing).
+    
+    c) downloading our processed file [coco_map.json](https://drive.google.com/file/d/1j19P2RNREfmtkKy9nE2-T4m-6850xCz3/view) for linking each image path and image index.
+    
 6. Organize the files into following structure:
     ```
     DATA_PATH/
@@ -472,7 +475,7 @@ And  put them together into a file:
         ├── val_target.pkl
         ├── VG_questions2.json
         ├── vg_target.pkl
-        └── coco_map.json
+        └── coco_map.json 
 
 
     ```
